@@ -1,1 +1,1 @@
-# -como-scripts
+# como-scripts
