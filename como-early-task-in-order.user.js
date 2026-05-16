@@ -46,6 +46,10 @@
     #cbt-panel.dark #cbt-title { color: #fff !important; }
     #cbt-panel.dark #cbt-controls span { color: #aaa !important; }
     #cbt-panel.dark #cbt-stats-bar { background: #111 !important; border-bottom-color: #333 !important; }
+    #cbt-panel.dark #cbt-label-batchers { color: #ffffff !important; }
+    #cbt-panel.dark #cbt-label-remaining { color: #ffffff !important; }
+    #cbt-panel.dark #cbt-stat-ip { color: #58a6ff !important; }
+    #cbt-panel.dark #cbt-stat-rem { color: #58a6ff !important; }
     #cbt-panel.dark #cbt-tabs { background: #111 !important; border-bottom-color: #333 !important; }
     #cbt-panel.dark .cbt-tab { color: #aaa !important; }
     #cbt-panel.dark .cbt-tab.active { color: #58a6ff !important; border-bottom-color: #58a6ff !important; }
@@ -521,12 +525,12 @@
       '</div>' +
       '<div id="cbt-stats-bar" style="display:flex;justify-content:space-around;padding:8px 10px;border-bottom:1px solid #ddd;background:#fafafa;">' +
         '<div style="text-align:center;">' +
-          '<span style="font-size:18px;">\uD83E\uDDBA</span>' +
-          '<span style="font-size:16px;font-weight:700;color:#333;margin-left:5px;">Batchers: <b id="cbt-stat-ip" style="color:#0066cc;">—</b></span>' +
+          '<span style="font-size:22px;">\uD83E\uDDBA</span>' +
+          '<span id="cbt-label-batchers" style="font-size:26px;font-weight:700;color:#333;margin-left:5px;">Batchers: <b id="cbt-stat-ip" style="color:#0066cc;">—</b></span>' +
         '</div>' +
         '<div style="text-align:center;">' +
-          '<span style="font-size:18px;">\uD83D\uDCE6</span>' +
-          '<span style="font-size:16px;font-weight:700;color:#333;margin-left:5px;">Remaining: <b id="cbt-stat-rem" style="color:#0066cc;">—</b></span>' +
+          '<span style="font-size:22px;">\uD83D\uDCE6</span>' +
+          '<span id="cbt-label-remaining" style="font-size:26px;font-weight:700;color:#333;margin-left:5px;">Remaining: <b id="cbt-stat-rem" style="color:#0066cc;">—</b></span>' +
         '</div>' +
       '</div>' +
       '<div id="cbt-tabs">' +
