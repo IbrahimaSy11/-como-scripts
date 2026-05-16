@@ -379,20 +379,13 @@
               .filter(function(t){ return t > 0; })
         );
         var nowEpoch = Date.now() / 1000;
-        var timeRemaining = (latestTarget - nowEpoch) / 3600; // hours
-        var timeLoss = (45 * activeJobs.length) / 3600;
-        var adjustedTime = timeRemaining - timeLoss;
-
-        // Use a realistic default rate: 2.5 bags/min = 150 bags/hour per batcher
-        var ratePerBatcher = batchRateCache > 0 ? batchRateCache : 150;
-        var recommended = 0;
-        if (adjustedTime > 0 && remaining > 0) {
-          recommended = Math.ceil(remaining / (ratePerBatcher * adjustedTime));
-        }
+        var timeRemaining = (latestTarget - nowEpoch) / 3600;
+        var remainingPackages = remaining;
+        var timeLossHours = (45 * activeJobs.length) / 3600;
+        var adjustedTimeRemaining = timeRemaining - timeLossHours;
+        var recommended = Math.ceil(remainingPackages / (batchRateCache * adjustedTimeRemaining));
         if (recommended < 0 || isNaN(recommended)) recommended = 0;
-        // Cap at current active batchers + 10 to avoid crazy numbers
-        var maxRecommended = Math.max(inProgress + 10, 15);
-        if (recommended > maxRecommended) recommended = maxRecommended;
+        if (recommended > 38) recommended = 38;
 
         var dotColor = 'gray';
         if (recommended >= 38)               dotColor = '#f85149';
