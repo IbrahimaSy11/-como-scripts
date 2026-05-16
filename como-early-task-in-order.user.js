@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         COMO - Early Task In Order With Timer & Batcher Dashboard
 // @namespace    https://github.com/uny2-ops
-// @version      17.0.0
+// @version      18.0.0
 // @description  Sorts tasks in order by earliest Batch Target + Time Left column + Batcher Timer Dashboard
 // @author       Ibrahim
 // @match        https://como-operations-dashboard-iad.iad.proxy.amazon.com/store/*/dash*
@@ -47,6 +47,7 @@
     #cbt-panel.dark #cbt-controls span { color: #aaa !important; }
     #cbt-panel.dark #cbt-stats-bar { background: #111 !important; border-bottom-color: #333 !important; }
     #cbt-panel.dark #cbt-label-batchers { color: #ffffff !important; }
+    #cbt-panel.dark #cbt-label-rec { color: #ffffff !important; }
     #cbt-panel.dark #cbt-label-remaining { color: #ffffff !important; }
     #cbt-panel.dark #cbt-stat-ip { color: #58a6ff !important; }
     #cbt-panel.dark #cbt-stat-rem { color: #58a6ff !important; }
@@ -94,7 +95,7 @@
     }
     .cbt-tab:hover { color: #333; }
     .cbt-tab.active { color: #0066cc; border-bottom: 2px solid #0066cc; }
-    #cbt-body { padding: 6px 8px 8px; max-height: 380px; overflow-y: auto; background: #fff; }
+    #cbt-body { padding: 6px 8px 8px; height: 270px; max-height: 270px; overflow-y: auto; background: #fff; }
     #cbt-table, #cbt-hist-table, #cbt-weekly-table { width: 100%; border-collapse: collapse; }
     #cbt-table thead tr, #cbt-hist-table thead tr, #cbt-weekly-table thead tr { border-bottom: 1px solid #ddd; }
     #cbt-table th, #cbt-hist-table th, #cbt-weekly-table th {
@@ -337,11 +338,15 @@
   ══════════════════════════════════════════ */
   var batchRateCache = 200;
 
-  function updateStats(inProgress, remaining) {
+  function updateStats(inProgress, remaining, recommended, dotColor) {
     var elIP  = document.getElementById('cbt-stat-ip');
     var elRem = document.getElementById('cbt-stat-rem');
+    var elRec = document.getElementById('cbt-stat-rec');
+    var elDot = document.getElementById('cbt-stat-dot');
     if (elIP)  elIP.textContent  = inProgress;
     if (elRem) elRem.textContent = remaining;
+    if (elRec) elRec.textContent = recommended != null ? recommended : '—';
+    if (elDot && dotColor) { elDot.style.background = dotColor; elDot.style.boxShadow = '0 0 6px ' + dotColor; }
     // Remove any old Problem Solve injection
     var old = document.getElementById('etf-ps-stats');
     if (old) old.remove();
@@ -366,7 +371,36 @@
         var expected  = activeJobs.reduce(function (s, j) { return s + (Number(j.totalExpectedPackages) || 0); }, 0);
         var batched   = activeJobs.reduce(function (s, j) { return s + (Number(j.packagesBatched) || 0); }, 0);
         var collected = activeJobs.reduce(function (s, j) { return s + (Number(j.packagesCollected) || 0); }, 0);
-        updateStats(inProgress, expected - (batched + collected));
+        var remaining = expected - (batched + collected);
+
+        var latestTarget = Math.max.apply(null,
+          data.filter(function(j){ return j.destinationType !== 'UNPACK'; })
+              .map(function(j){ return Number(j.jobBatchTarget); })
+              .filter(function(t){ return t > 0; })
+        );
+        var nowEpoch = Date.now() / 1000;
+        var timeRemaining = (latestTarget - nowEpoch) / 3600; // hours
+        var timeLoss = (45 * activeJobs.length) / 3600;
+        var adjustedTime = timeRemaining - timeLoss;
+
+        // Use a realistic default rate: 2.5 bags/min = 150 bags/hour per batcher
+        var ratePerBatcher = batchRateCache > 0 ? batchRateCache : 150;
+        var recommended = 0;
+        if (adjustedTime > 0 && remaining > 0) {
+          recommended = Math.ceil(remaining / (ratePerBatcher * adjustedTime));
+        }
+        if (recommended < 0 || isNaN(recommended)) recommended = 0;
+        // Cap at current active batchers + 10 to avoid crazy numbers
+        var maxRecommended = Math.max(inProgress + 10, 15);
+        if (recommended > maxRecommended) recommended = maxRecommended;
+
+        var dotColor = 'gray';
+        if (recommended >= 38)               dotColor = '#f85149';
+        else if (inProgress === recommended) dotColor = '#3fb950';
+        else if (inProgress < recommended)   dotColor = '#e3b341';
+        else                                 dotColor = '#f85149';
+
+        updateStats(inProgress, remaining, recommended, dotColor);
         removeFromHeader();
       }).catch(function () {});
   }
@@ -519,6 +553,7 @@
       '<div id="cbt-header">' +
         '<span id="cbt-title">\u23F1 Batcher Timers</span>' +
         '<div id="cbt-controls">' +
+          '<span id="cbt-collapse-btn" title="Collapse/Expand" style="font-size:22px;cursor:pointer;">🔼</span>' +
           '<span id="cbt-theme-btn" title="Toggle Dark/Light" style="font-size:22px;cursor:pointer;">🌙</span>' +
           '<span id="cbt-reset-size" title="Reset Size" style="font-size:22px;">↕️</span>' +
         '</div>' +
@@ -527,6 +562,11 @@
         '<div style="text-align:center;">' +
           '<span style="font-size:22px;">\uD83E\uDDBA</span>' +
           '<span id="cbt-label-batchers" style="font-size:26px;font-weight:700;color:#333;margin-left:5px;">Batchers: <b id="cbt-stat-ip" style="color:#0066cc;">—</b></span>' +
+        '</div>' +
+        '<div style="text-align:center;">' +
+          '<span style="font-size:22px;">\uD83D\uDCCA</span>' +
+          '<span id="cbt-label-rec" style="font-size:26px;font-weight:700;color:#333;margin-left:5px;">Recommended: <b id="cbt-stat-rec" style="color:#0066cc;">—</b>' +
+          '<span id="cbt-stat-dot" style="display:inline-block;width:16px;height:16px;border-radius:50%;background:gray;box-shadow:0 0 6px gray;vertical-align:middle;margin-left:8px;"></span></b></span>' +
         '</div>' +
         '<div style="text-align:center;">' +
           '<span style="font-size:22px;">\uD83D\uDCE6</span>' +
@@ -629,6 +669,29 @@
       });
     });
 
+    /* ── Collapse / Expand button ── */
+    var isCollapsed = false;
+    var collapseBtn = panel2.querySelector('#cbt-collapse-btn');
+    collapseBtn.addEventListener('click', function() {
+      var body = panel2.querySelector('#cbt-body');
+      var tabs = panel2.querySelector('#cbt-tabs');
+      var drag = panel2.querySelector('#cbt-drag-bottom');
+      isCollapsed = !isCollapsed;
+      if (isCollapsed) {
+        // Collapse — hide body, tabs and drag handle
+        if (body) { body.style.display = 'none'; }
+        if (tabs) { tabs.style.display = 'none'; }
+        if (drag) { drag.style.display = 'none'; }
+        collapseBtn.textContent = '🔽';
+      } else {
+        // Expand — show everything back
+        if (body) { body.style.display = ''; }
+        if (tabs) { tabs.style.display = ''; }
+        if (drag) { drag.style.display = ''; }
+        collapseBtn.textContent = '🔼';
+      }
+    });
+
     /* ── Dark/Light theme toggle ── */
     var isDark = localStorage.getItem('cbt_dark') !== 'false'; // default is dark/black
     var themeBtn = panel2.querySelector('#cbt-theme-btn');
@@ -652,15 +715,22 @@
     panel2.querySelector('#cbt-reset-size').addEventListener('click', function() {
       var body = panel2.querySelector('#cbt-body');
       var tabs = panel2.querySelector('#cbt-tabs');
+      var drag = panel2.querySelector('#cbt-drag-bottom');
       if (!body) return;
-      body.style.height = '380px';
-      body.style.maxHeight = '380px';
-      if (tabs) tabs.style.display = '';
+      // Un-collapse first
+      isCollapsed = false;
+      collapseBtn.textContent = '🔼';
+      if (body) { body.style.display = ''; }
+      if (tabs) { tabs.style.display = ''; }
+      if (drag) { drag.style.display = ''; }
+      // Reset height
+      body.style.height = '270px';
+      body.style.maxHeight = '270px';
       try { localStorage.removeItem('cbt_body_h'); } catch(ex) {}
     });
 
     /* ── DRAG to resize (up and down) ── */
-    var isDragging = false, dragStartY = 0, dragStartH = 380;
+    var isDragging = false, dragStartY = 0, dragStartH = 270;
 
     panel2.querySelector('#cbt-drag-bottom').addEventListener('mousedown', function(e) {
       isDragging = true;
@@ -751,10 +821,7 @@
       else{va=ra.elapsedSec||0;vb=rb.elapsedSec||0;}
       return liveSortAsc?va-vb:vb-va;
     });
-    if(rows.length===0){
-      if(tbody.innerHTML==='') empty.style.display='block';
-      return; // keep old rows visible while waiting
-    }
+    if(rows.length===0){tbody.innerHTML='';empty.style.display='block';return;}
     empty.style.display='none';
     var html='';
     for(var i=0;i<rows.length;i++){
