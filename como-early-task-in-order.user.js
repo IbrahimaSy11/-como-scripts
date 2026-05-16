@@ -40,6 +40,30 @@
     }
     .etf-col-cell { display: flex; align-items: center; justify-content: center; text-align: center; }
 
+    /* ── Dark mode ── */
+    #cbt-panel.dark { background: #000 !important; border-color: #333 !important; color: #fff !important; }
+    #cbt-panel.dark #cbt-header { background: #111 !important; border-bottom-color: #333 !important; }
+    #cbt-panel.dark #cbt-title { color: #fff !important; }
+    #cbt-panel.dark #cbt-controls span { color: #aaa !important; }
+    #cbt-panel.dark #cbt-stats-bar { background: #111 !important; border-bottom-color: #333 !important; }
+    #cbt-panel.dark #cbt-tabs { background: #111 !important; border-bottom-color: #333 !important; }
+    #cbt-panel.dark .cbt-tab { color: #aaa !important; }
+    #cbt-panel.dark .cbt-tab.active { color: #58a6ff !important; border-bottom-color: #58a6ff !important; }
+    #cbt-panel.dark #cbt-body { background: #000 !important; }
+    #cbt-panel.dark #cbt-table th, #cbt-panel.dark #cbt-hist-table th, #cbt-panel.dark #cbt-weekly-table th { background: #000 !important; color: #fff !important; }
+    #cbt-panel.dark #cbt-table td, #cbt-panel.dark #cbt-hist-table td, #cbt-panel.dark #cbt-weekly-table td { color: #e6edf3 !important; border-bottom-color: #222 !important; }
+    #cbt-panel.dark #cbt-table tbody tr:hover td, #cbt-panel.dark #cbt-hist-table tbody tr:hover td, #cbt-panel.dark #cbt-weekly-table tbody tr:hover td { background: #111 !important; }
+    #cbt-panel.dark .cbt-assoc { color: #e6edf3 !important; }
+    #cbt-panel.dark .cbt-assoc:hover { color: #58a6ff !important; }
+    #cbt-panel.dark .cbt-hist-meta { color: #e6edf3 !important; }
+    #cbt-panel.dark .cbt-ws-val { color: #e6edf3 !important; }
+    #cbt-panel.dark .cbt-ws-label { color: #aaa !important; }
+    #cbt-panel.dark #cbt-search-input, #cbt-panel.dark #cbt-hist-search-input { background: #111 !important; border-color: #333 !important; color: #fff !important; }
+    #cbt-panel.dark #cbt-updated { color: #555 !important; }
+    #cbt-panel.dark #cbt-weekly-summary, #cbt-panel.dark #cbt-hist-summary { border-bottom-color: #333 !important; }
+    #cbt-panel.dark #cbt-drag-bottom { background: #222 !important; }
+    #cbt-panel.dark #cbt-drag-bottom:hover { background: #58a6ff !important; }
+
     #cbt-panel {
       width: 100%; background: #ffffff; border: 1px solid #c8c8c8;
       border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -491,6 +515,7 @@
       '<div id="cbt-header">' +
         '<span id="cbt-title">\u23F1 Batcher Timers</span>' +
         '<div id="cbt-controls">' +
+          '<span id="cbt-theme-btn" title="Toggle Dark/Light" style="font-size:22px;cursor:pointer;">🌙</span>' +
           '<span id="cbt-reset-size" title="Reset Size" style="font-size:22px;">↕️</span>' +
         '</div>' +
       '</div>' +
@@ -598,6 +623,25 @@
         if (activeTab==='history') renderHistory();
         if (activeTab==='weekly')  renderWeekly();
       });
+    });
+
+    /* ── Dark/Light theme toggle ── */
+    var isDark = localStorage.getItem('cbt_dark') !== 'false'; // default is dark/black
+    var themeBtn = panel2.querySelector('#cbt-theme-btn');
+    function applyTheme() {
+      if (isDark) {
+        panel2.classList.add('dark');
+        themeBtn.textContent = '☀️';
+      } else {
+        panel2.classList.remove('dark');
+        themeBtn.textContent = '🌙';
+      }
+    }
+    applyTheme();
+    themeBtn.addEventListener('click', function() {
+      isDark = !isDark;
+      try { localStorage.setItem('cbt_dark', isDark); } catch(e) {}
+      applyTheme();
     });
 
     /* ── Reset size ── */
