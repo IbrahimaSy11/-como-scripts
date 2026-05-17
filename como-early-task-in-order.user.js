@@ -336,7 +336,7 @@
   /* ══════════════════════════════════════════
      PART 3 — BATCHERS + REMAINING PACKAGES
   ══════════════════════════════════════════ */
-  var batchRateCache = 200;
+  var batchRateCache = 120; // 2.0 bags/min per batcher = 120 bags/hour (conservative fallback)
 
   function updateStats(inProgress, remaining, recommended, dotColor) {
     var elIP  = document.getElementById('cbt-stat-ip');
@@ -383,7 +383,21 @@
         var remainingPackages = remaining;
         var timeLossHours = (45 * activeJobs.length) / 3600;
         var adjustedTimeRemaining = timeRemaining - timeLossHours;
-        var recommended = Math.ceil(remainingPackages / (batchRateCache * adjustedTimeRemaining));
+
+        // Calculate actual avg rate from live batchers in taskCache
+        var liveRates = [];
+        taskCache.forEach(function(d) {
+          if (d.state === 'BATCHING') {
+            var r = computeRow(d);
+            if (r.scanRate && r.scanRate > 0) liveRates.push(r.scanRate);
+          }
+        });
+        // avgRate in bags/min → convert to bags/hour for formula
+        var avgRatePerBatcher = liveRates.length > 0
+          ? (liveRates.reduce(function(s,r){return s+r;},0) / liveRates.length) * 60
+          : batchRateCache;
+
+        var recommended = Math.ceil(remainingPackages / (avgRatePerBatcher * adjustedTimeRemaining));
         if (recommended < 0 || isNaN(recommended)) recommended = 0;
         if (recommended > 38) recommended = 38;
 
