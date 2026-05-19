@@ -166,6 +166,22 @@
   ══════════════════════════════════════════ */
   var _sorting = false, _sortObserver = null, _attached = null;
 
+  /* ── Get the store's timezone from the dashboard header ── */
+  function getStoreTimezone() {
+    // The dashboard shows timezone in the top right e.g. "America/New_York"
+    var tzEl = document.querySelector('[class*="timezone"], [class*="time-zone"], .store-time, .current-time');
+    if (tzEl) {
+      var match = tzEl.textContent.match(/([A-Za-z]+\/[A-Za-z_]+)/);
+      if (match) return match[1];
+    }
+    // Fallback: read from the page text
+    var bodyText = document.body ? document.body.innerHTML : '';
+    var tzMatch = bodyText.match(/America\/[A-Za-z_]+/);
+    if (tzMatch) return tzMatch[0];
+    // Default to New York if nothing found
+    return 'America/New_York';
+  }
+
   function parseTime(raw) {
     if (!raw) return null;
     var str = raw.replace(/[^\d:APMapm\s]/g, '').trim();
@@ -175,9 +191,30 @@
     var ap = m[3] ? m[3].toUpperCase() : null;
     if (ap === 'PM' && h < 12) h += 12;
     if (ap === 'AM' && h === 12) h = 0;
-    var d = new Date(); d.setHours(h, mn, 0, 0);
-    if (d.getTime() > Date.now() + 8 * 3600000) d.setDate(d.getDate() - 1);
-    return d.getTime();
+
+    // Use the store's timezone so times are always correct regardless of browser location
+    try {
+      var tz = getStoreTimezone();
+      var now = new Date();
+      // Get today's date string in the store's timezone
+      var dateStr = now.toLocaleDateString('en-CA', { timeZone: tz }); // YYYY-MM-DD format
+      // Build a full datetime string in that timezone
+      var fullStr = dateStr + 'T' + String(h).padStart(2,'0') + ':' + String(mn).padStart(2,'0') + ':00';
+      // Parse it as if it's in the store timezone
+      var storeDate = new Date(new Date(fullStr).toLocaleString('en-US', { timeZone: tz }));
+      // Convert back to UTC ms
+      var result = new Date(fullStr + ' ' + Intl.DateTimeFormat('en-US', {
+        timeZone: tz, timeZoneName: 'short'
+      }).formatToParts(now).find(function(p){ return p.type === 'timeZoneName'; }).value).getTime();
+      if (isNaN(result)) throw new Error('fallback');
+      if (result > Date.now() + 8 * 3600000) result -= 86400000;
+      return result;
+    } catch(e) {
+      // Fallback to simple local time parsing
+      var d = new Date(); d.setHours(h, mn, 0, 0);
+      if (d.getTime() > Date.now() + 8 * 3600000) d.setDate(d.getDate() - 1);
+      return d.getTime();
+    }
   }
 
   function getBatchTarget(card) {
