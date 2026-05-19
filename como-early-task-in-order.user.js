@@ -599,7 +599,6 @@
         '<div id="cbt-controls">' +
           '<span id="cbt-collapse-btn" title="Collapse/Expand" style="font-size:22px;cursor:pointer;">🔼</span>' +
           '<span id="cbt-theme-btn" title="Toggle Dark/Light" style="font-size:22px;cursor:pointer;">🌙</span>' +
-          '<span id="cbt-reset-size" title="Reset Size" style="font-size:22px;">↕️</span>' +
         '</div>' +
       '</div>' +
       '<div id="cbt-stats-bar" style="display:flex;justify-content:space-around;padding:8px 10px;border-bottom:1px solid #ddd;background:#fafafa;">' +
@@ -753,24 +752,6 @@
       isDark = !isDark;
       try { localStorage.setItem('cbt_dark', isDark); } catch(e) {}
       applyTheme();
-    });
-
-    /* ── Reset size ── */
-    panel2.querySelector('#cbt-reset-size').addEventListener('click', function() {
-      var body = panel2.querySelector('#cbt-body');
-      var tabs = panel2.querySelector('#cbt-tabs');
-      var drag = panel2.querySelector('#cbt-drag-bottom');
-      if (!body) return;
-      // Un-collapse first
-      isCollapsed = false;
-      collapseBtn.textContent = '🔼';
-      if (body) { body.style.display = ''; }
-      if (tabs) { tabs.style.display = ''; }
-      if (drag) { drag.style.display = ''; }
-      // Reset height
-      body.style.height = '270px';
-      body.style.maxHeight = '270px';
-      try { localStorage.removeItem('cbt_body_h'); } catch(ex) {}
     });
 
     /* ── DRAG to resize (up and down) ── */
