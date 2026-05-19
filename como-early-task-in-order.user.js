@@ -719,19 +719,28 @@
       var body = panel2.querySelector('#cbt-body');
       var tabs = panel2.querySelector('#cbt-tabs');
       var drag = panel2.querySelector('#cbt-drag-bottom');
-      isCollapsed = !isCollapsed;
+      var currentH = body ? body.offsetHeight : 270;
+
       if (isCollapsed) {
-        // Collapse — hide body, tabs and drag handle
-        if (body) { body.style.display = 'none'; }
-        if (tabs) { tabs.style.display = 'none'; }
-        if (drag) { drag.style.display = 'none'; }
-        collapseBtn.textContent = '🔽';
-      } else {
-        // Expand — show everything back
-        if (body) { body.style.display = ''; }
-        if (tabs) { tabs.style.display = ''; }
-        if (drag) { drag.style.display = ''; }
+        // Currently collapsed — expand back to original size
+        isCollapsed = false;
+        if (body) { body.style.display = ''; body.style.height = '270px'; body.style.maxHeight = '270px'; }
+        if (tabs) tabs.style.display = '';
+        if (drag) drag.style.display = '';
         collapseBtn.textContent = '🔼';
+        try { localStorage.setItem('cbt_body_h', 270); } catch(ex) {}
+      } else if (currentH > 270) {
+        // Dragged down — first press resets to original size
+        if (body) { body.style.height = '270px'; body.style.maxHeight = '270px'; }
+        collapseBtn.textContent = '🔼';
+        try { localStorage.setItem('cbt_body_h', 270); } catch(ex) {}
+      } else {
+        // Already at original size — second press collapses
+        isCollapsed = true;
+        if (body) { body.style.display = 'none'; }
+        if (tabs) tabs.style.display = 'none';
+        if (drag) drag.style.display = 'none';
+        collapseBtn.textContent = '🔽';
       }
     });
 
@@ -771,11 +780,10 @@
       var body = panel2.querySelector('#cbt-body');
       var tabs = panel2.querySelector('#cbt-tabs');
       if (!body) return;
-      var newH = Math.max(0, dragStartH + (e.clientY - dragStartY));
+      var newH = Math.max(270, dragStartH + (e.clientY - dragStartY)); // min 270px = original size
       body.style.height = newH + 'px';
       body.style.maxHeight = newH + 'px';
-      // Hide tabs when fully collapsed so only header + stats bar show
-      if (tabs) tabs.style.display = newH === 0 ? 'none' : '';
+      if (tabs) tabs.style.display = '';
       try { localStorage.setItem('cbt_body_h', newH); } catch(ex) {}
     });
 
