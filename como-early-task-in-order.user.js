@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         COMO - Early Task In Order With Timer & Batcher Dashboard
 // @namespace    https://github.com/uny2-ops
-// @version      18.0.0
+// @version      19.0.0
 // @description  Sorts tasks in order by earliest Batch Target + Time Left column + Batcher Timer Dashboard
 // @author       Ibrahim
 // @match        https://como-operations-dashboard-iad.iad.proxy.amazon.com/store/*/dash*
@@ -19,9 +19,6 @@
   var DRIVE_URL = 'https://drive.corp.amazon.com/view/jsermar@/COMO_Dashboard_BatchRate_NA.json?download=true';
   var COMO_BASE = 'https://como-operations-dashboard-iad.iad.proxy.amazon.com';
 
-  /* ══════════════════════════════════════════
-     STYLES
-  ══════════════════════════════════════════ */
   var style = document.createElement('style');
   style.textContent = `
     .etf-timeleft {
@@ -40,7 +37,6 @@
     }
     .etf-col-cell { display: flex; align-items: center; justify-content: center; text-align: center; }
 
-    /* ── Dark mode ── */
     #cbt-panel.dark { background: #000 !important; border-color: #333 !important; color: #fff !important; }
     #cbt-panel.dark #cbt-header { background: #111 !important; border-bottom-color: #333 !important; }
     #cbt-panel.dark #cbt-title { color: #fff !important; }
@@ -152,7 +148,17 @@
     .cbt-miss-dot { margin-left: 4px; font-size: 16px; vertical-align: middle; }
     .cbt-miss-dot.warn { color: #cc8800; } .cbt-miss-dot.alert { color: #cc2200; }
 
-    /* Drag handle at bottom */
+    /* ── Slow batcher alert ── */
+    .cbt-slow-alert {
+      display: inline-block; background: #f85149; color: #fff;
+      font-size: 11px; font-weight: 800; padding: 2px 6px;
+      border-radius: 8px; margin-left: 6px; vertical-align: middle;
+      animation: cbt-slow-pulse 1s infinite;
+    }
+    @keyframes cbt-slow-pulse {
+      0%,100% { opacity: 1; } 50% { opacity: 0.4; }
+    }
+
     #cbt-drag-bottom {
       width: 100%; height: 8px; background: #e0e0e0;
       cursor: ns-resize; border-radius: 0 0 4px 4px; transition: background 0.2s;
@@ -166,19 +172,15 @@
   ══════════════════════════════════════════ */
   var _sorting = false, _sortObserver = null, _attached = null;
 
-  /* ── Get the store's timezone from the dashboard header ── */
   function getStoreTimezone() {
-    // The dashboard shows timezone in the top right e.g. "America/New_York"
     var tzEl = document.querySelector('[class*="timezone"], [class*="time-zone"], .store-time, .current-time');
     if (tzEl) {
       var match = tzEl.textContent.match(/([A-Za-z]+\/[A-Za-z_]+)/);
       if (match) return match[1];
     }
-    // Fallback: read from the page text
     var bodyText = document.body ? document.body.innerHTML : '';
     var tzMatch = bodyText.match(/America\/[A-Za-z_]+/);
     if (tzMatch) return tzMatch[0];
-    // Default to New York if nothing found
     return 'America/New_York';
   }
 
@@ -191,18 +193,11 @@
     var ap = m[3] ? m[3].toUpperCase() : null;
     if (ap === 'PM' && h < 12) h += 12;
     if (ap === 'AM' && h === 12) h = 0;
-
-    // Use the store's timezone so times are always correct regardless of browser location
     try {
       var tz = getStoreTimezone();
       var now = new Date();
-      // Get today's date string in the store's timezone
-      var dateStr = now.toLocaleDateString('en-CA', { timeZone: tz }); // YYYY-MM-DD format
-      // Build a full datetime string in that timezone
+      var dateStr = now.toLocaleDateString('en-CA', { timeZone: tz });
       var fullStr = dateStr + 'T' + String(h).padStart(2,'0') + ':' + String(mn).padStart(2,'0') + ':00';
-      // Parse it as if it's in the store timezone
-      var storeDate = new Date(new Date(fullStr).toLocaleString('en-US', { timeZone: tz }));
-      // Convert back to UTC ms
       var result = new Date(fullStr + ' ' + Intl.DateTimeFormat('en-US', {
         timeZone: tz, timeZoneName: 'short'
       }).formatToParts(now).find(function(p){ return p.type === 'timeZoneName'; }).value).getTime();
@@ -210,7 +205,6 @@
       if (result > Date.now() + 8 * 3600000) result -= 86400000;
       return result;
     } catch(e) {
-      // Fallback to simple local time parsing
       var d = new Date(); d.setHours(h, mn, 0, 0);
       if (d.getTime() > Date.now() + 8 * 3600000) d.setDate(d.getDate() - 1);
       return d.getTime();
@@ -319,17 +313,14 @@
     btCol.parentNode.insertBefore(newCol, btCol.nextSibling);
   }
 
-  /* ── Check if an element is inside Partially Batched or Staged for Pickup ── */
   function isInExcludedSection(el) {
     var node = el;
     while (node && node !== document.body) {
-      // Check siblings and parent text for section headings
       var prev = node.previousElementSibling;
       while (prev) {
         if (/partially\s*batched|staged\s*for\s*pickup/i.test(prev.textContent || '')) return true;
         prev = prev.previousElementSibling;
       }
-      // Check parent's previous siblings
       if (node.parentElement) {
         var parentPrev = node.parentElement.previousElementSibling;
         if (parentPrev && /partially\s*batched|staged\s*for\s*pickup/i.test(parentPrev.textContent || '')) return true;
@@ -340,13 +331,11 @@
   }
 
   function injectAllTimers() {
-    // First remove any Time Left columns already injected in excluded sections
     document.querySelectorAll('div.row.job-card-header, job-card').forEach(function(el) {
       if (isInExcludedSection(el)) {
         el.querySelectorAll('.etf-col-cell').forEach(function(col) { col.remove(); });
       }
     });
-
     document.querySelectorAll('div.row.job-card-header').forEach(function(row) {
       if (isInExcludedSection(row)) return;
       injectRowTimer(row);
@@ -373,7 +362,7 @@
   /* ══════════════════════════════════════════
      PART 3 — BATCHERS + REMAINING PACKAGES
   ══════════════════════════════════════════ */
-  var batchRateCache = 120; // 2.0 bags/min per batcher = 120 bags/hour (conservative fallback)
+  var batchRateCache = 120;
 
   function updateStats(inProgress, remaining, recommended, dotColor) {
     var elIP  = document.getElementById('cbt-stat-ip');
@@ -384,7 +373,6 @@
     if (elRem) elRem.textContent = remaining;
     if (elRec) elRec.textContent = recommended != null ? recommended : '—';
     if (elDot && dotColor) { elDot.style.background = dotColor; elDot.style.boxShadow = '0 0 6px ' + dotColor; }
-    // Remove any old Problem Solve injection
     var old = document.getElementById('etf-ps-stats');
     if (old) old.remove();
   }
@@ -420,8 +408,8 @@
         var remainingPackages = remaining;
         var timeLossHours = (45 * activeJobs.length) / 3600;
         var adjustedTimeRemaining = timeRemaining - timeLossHours;
+        if (adjustedTimeRemaining <= 0) adjustedTimeRemaining = 0.5;
 
-        // Calculate actual avg rate from live batchers in taskCache
         var liveRates = [];
         taskCache.forEach(function(d) {
           if (d.state === 'BATCHING') {
@@ -429,12 +417,14 @@
             if (r.scanRate && r.scanRate > 0) liveRates.push(r.scanRate);
           }
         });
-        // avgRate in bags/min → convert to bags/hour for formula
         var avgRatePerBatcher = liveRates.length > 0
           ? (liveRates.reduce(function(s,r){return s+r;},0) / liveRates.length) * 60
           : batchRateCache;
 
-        var recommended = Math.ceil(remainingPackages / (avgRatePerBatcher * adjustedTimeRemaining));
+        var recommended = 0;
+        if (remainingPackages > 0 && avgRatePerBatcher > 0) {
+          recommended = Math.ceil(remainingPackages / (avgRatePerBatcher * adjustedTimeRemaining));
+        }
         if (recommended < 0 || isNaN(recommended)) recommended = 0;
         if (recommended > 38) recommended = 38;
 
@@ -553,6 +543,9 @@
       recordCompletedBatch(merged,r.elapsedSec); taskCache.delete(ref); return true;
     }
     if (item.state!=='BATCHING'&&item.operationState!=='IN_PROGRESS') return false;
+    if (!item.associateId && !item.associate && item.driverAssignment) {
+      item.associate = item.driverAssignment;
+    }
     taskCache.set(ref,item); return true;
   }
 
@@ -589,7 +582,6 @@
     renderLive();
   }
 
-  /* ── Build panel DOM ── */
   function buildPanel() {
     var panel2 = document.createElement('div');
     panel2.id = 'cbt-panel';
@@ -660,7 +652,6 @@
     return panel2;
   }
 
-  /* ── Inject panel above Utilization ── */
   var _panel2Ref = null;
 
   function injectPanel() {
@@ -668,14 +659,10 @@
     var utilEl = document.querySelector('utilization.dashboard-utilization');
     if (!utilEl) utilEl = document.querySelector('utilization');
     if (!utilEl) return;
-
-    // Build panel only ONCE then reuse same DOM node
     if (!_panel2Ref) {
       _panel2Ref = buildPanel();
       attachPanelEvents(_panel2Ref);
     }
-
-    // Restore saved height
     try {
       var savedH = localStorage.getItem('cbt_body_h');
       var body0  = _panel2Ref.querySelector('#cbt-body');
@@ -687,18 +674,13 @@
         if (tabs0) tabs0.style.display = h0 === 0 ? 'none' : '';
       }
     } catch(ex) {}
-
-    // Re-insert same panel element preserving all data and size
     utilEl.parentNode.insertBefore(_panel2Ref, utilEl);
-
-    // Render cached data immediately
     renderLive();
     renderHistory();
     renderWeekly();
   }
 
   function attachPanelEvents(panel2) {
-    /* ── Tab switching ── */
     panel2.querySelectorAll('.cbt-tab').forEach(function(tab) {
       tab.addEventListener('click', function() {
         panel2.querySelectorAll('.cbt-tab').forEach(function(t){t.classList.remove('active');});
@@ -712,7 +694,6 @@
       });
     });
 
-    /* ── Collapse / Expand button ── */
     var isCollapsed = false;
     var collapseBtn = panel2.querySelector('#cbt-collapse-btn');
     collapseBtn.addEventListener('click', function() {
@@ -720,9 +701,7 @@
       var tabs = panel2.querySelector('#cbt-tabs');
       var drag = panel2.querySelector('#cbt-drag-bottom');
       var currentH = body ? body.offsetHeight : 270;
-
       if (isCollapsed) {
-        // Currently collapsed — expand back to original size
         isCollapsed = false;
         if (body) { body.style.display = ''; body.style.height = '270px'; body.style.maxHeight = '270px'; }
         if (tabs) tabs.style.display = '';
@@ -730,12 +709,10 @@
         collapseBtn.textContent = '🔼';
         try { localStorage.setItem('cbt_body_h', 270); } catch(ex) {}
       } else if (currentH > 270) {
-        // Dragged down — first press resets to original size
         if (body) { body.style.height = '270px'; body.style.maxHeight = '270px'; }
         collapseBtn.textContent = '🔼';
         try { localStorage.setItem('cbt_body_h', 270); } catch(ex) {}
       } else {
-        // Already at original size — second press collapses
         isCollapsed = true;
         if (body) { body.style.display = 'none'; }
         if (tabs) tabs.style.display = 'none';
@@ -744,17 +721,11 @@
       }
     });
 
-    /* ── Dark/Light theme toggle ── */
-    var isDark = localStorage.getItem('cbt_dark') !== 'false'; // default is dark/black
+    var isDark = localStorage.getItem('cbt_dark') !== 'false';
     var themeBtn = panel2.querySelector('#cbt-theme-btn');
     function applyTheme() {
-      if (isDark) {
-        panel2.classList.add('dark');
-        themeBtn.textContent = '☀️';
-      } else {
-        panel2.classList.remove('dark');
-        themeBtn.textContent = '🌙';
-      }
+      if (isDark) { panel2.classList.add('dark'); themeBtn.textContent = '☀️'; }
+      else { panel2.classList.remove('dark'); themeBtn.textContent = '🌙'; }
     }
     applyTheme();
     themeBtn.addEventListener('click', function() {
@@ -763,33 +734,28 @@
       applyTheme();
     });
 
-    /* ── DRAG to resize (up and down) ── */
     var isDragging = false, dragStartY = 0, dragStartH = 270;
-
     panel2.querySelector('#cbt-drag-bottom').addEventListener('mousedown', function(e) {
       isDragging = true;
       dragStartY = e.clientY;
       var body = panel2.querySelector('#cbt-body');
-      dragStartH = body ? body.offsetHeight : 185;
+      dragStartH = body ? body.offsetHeight : 270;
       e.preventDefault();
       e.stopPropagation();
     });
-
     document.addEventListener('mousemove', function(e) {
       if (!isDragging) return;
       var body = panel2.querySelector('#cbt-body');
       var tabs = panel2.querySelector('#cbt-tabs');
       if (!body) return;
-      var newH = Math.max(270, dragStartH + (e.clientY - dragStartY)); // min 270px = original size
+      var newH = Math.max(270, dragStartH + (e.clientY - dragStartY));
       body.style.height = newH + 'px';
       body.style.maxHeight = newH + 'px';
       if (tabs) tabs.style.display = '';
       try { localStorage.setItem('cbt_body_h', newH); } catch(ex) {}
     });
-
     document.addEventListener('mouseup', function() { isDragging = false; });
 
-    /* ── Restore saved height ── */
     try {
       var savedH = localStorage.getItem('cbt_body_h');
       if (savedH) {
@@ -801,7 +767,6 @@
       }
     } catch(ex) {}
 
-    /* ── Click associate name to copy ── */
     document.addEventListener('click', function(e) {
       var el = e.target.closest('.cbt-assoc');
       if (!el || !panel2.contains(el)) return;
@@ -813,13 +778,11 @@
       });
     });
 
-    /* ── Search ── */
     document.addEventListener('input', function(e) {
       if (e.target.id==='cbt-search-input') { weeklySearchTerm=e.target.value; renderWeekly(); }
       if (e.target.id==='cbt-hist-search-input') { historySearchTerm=e.target.value; renderHistory(); }
     });
 
-    /* ── Sort ── */
     document.addEventListener('click', function(e) {
       var th = e.target.closest('.cbt-sortable');
       if (th && document.getElementById('cbt-weekly-table') && document.getElementById('cbt-weekly-table').contains(th)) {
@@ -842,7 +805,6 @@
     });
   }
 
-  /* ── Render Live ── */
   function renderLive() {
     var tbody=document.querySelector('#cbt-tbody'), empty=document.querySelector('#cbt-empty');
     if (!tbody||!empty) return;
@@ -858,13 +820,14 @@
     empty.style.display='none';
     var html='';
     for(var i=0;i<rows.length;i++){
-      var data=rows[i],assoc=data.associateId||data.associate||data.shortClientRef,shortRef=data.shortClientRef,r=computeRow(data);
+      var data=rows[i],assoc=data.associateId||data.associate||data.driverAssignment||data.shortClientRef,shortRef=data.shortClientRef,r=computeRow(data);
       var elMin=r.elapsedSec!=null?r.elapsedSec/60:0;
       var elCls=r.elapsedSec!=null?(elMin>=ALERT_ELAPSED_MIN?'alert':elMin>=WARN_ELAPSED_MIN?'warn':''):'';
       var elTxt=r.elapsedSec!=null?fmt(r.elapsedSec):'--:--';
       var rateCls=r.scanRate!=null?(r.scanRate<ALERT_RATE?'alert':r.scanRate<WARN_RATE?'warn':''):'pending';
       var rateTxt=r.scanRate!=null?r.scanRate.toFixed(1):'\u2014';
-      html+='<tr><td><span class="cbt-assoc">'+assoc+'</span><span class="cbt-ref">'+shortRef+'</span></td>';
+      var slowAlert=(r.scanRate!==null&&r.scanRate<ALERT_RATE&&r.elapsedSec>120)?'<span class="cbt-slow-alert">⚠ SLOW</span>':'';
+      html+='<tr><td><span class="cbt-assoc">'+assoc+'</span>'+slowAlert+'<span class="cbt-ref">'+shortRef+'</span></td>';
       html+='<td><span class="cbt-elapsed '+elCls+'" data-start="'+(r.startMs||'')+'" data-live="'+(r.inProgress?'1':'0')+'">'+elTxt+'</span></td>';
       html+='<td><span class="cbt-rate '+rateCls+'">'+rateTxt+'</span></td></tr>';
     }
@@ -873,7 +836,6 @@
     if(upd) upd.textContent='updated '+new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
   }
 
-  /* ── Render History ── */
   function renderHistory() {
     var tbody=document.querySelector('#cbt-hist-tbody'),empty=document.querySelector('#cbt-hist-empty'),summary=document.querySelector('#cbt-hist-summary');
     if(!tbody||!empty) return;
@@ -911,7 +873,6 @@
     tbody.innerHTML=html;
   }
 
-  /* ── Render Weekly ── */
   function renderWeekly() {
     var tbody=document.querySelector('#cbt-weekly-tbody'),empty=document.querySelector('#cbt-weekly-empty'),summary=document.querySelector('#cbt-weekly-summary');
     if(!tbody||!empty) return;
@@ -957,7 +918,6 @@
     tbody.innerHTML=html;
   }
 
-  /* ── Live tick ── */
   function tickLive() {
     document.querySelectorAll('.cbt-elapsed[data-live="1"]').forEach(function(el){
       var startMs=parseFloat(el.dataset.start); if(!startMs) return;
@@ -967,32 +927,23 @@
     });
   }
 
-  /* ── Watch for Utilization box ── */
   var panelWatcher = new MutationObserver(function() {
     if (!document.getElementById('cbt-panel')) injectPanel();
   });
 
-  /* ══════════════════════════════════════════
-     START
-  ══════════════════════════════════════════ */
   function start() {
     document.head.appendChild(style);
-
     timerWatcher.observe(document.documentElement, { childList: true, subtree: true });
     injectAllTimers();
     setInterval(tickTimers, 1000);
     setInterval(injectAllTimers, 1000);
-
     fetchAndUpdate();
-
     panelWatcher.observe(document.documentElement, { childList: true, subtree: true });
     injectPanel();
-
     pollActiveTasks();
     setInterval(pollActiveTasks, POLL_MS);
     setInterval(tickLive, TICK_MS);
     setInterval(fetchAndUpdate, 1000);
-
     try {
       GM_xmlhttpRequest({
         method: 'GET', url: DRIVE_URL + '&_=' + Date.now(), responseType: 'json',
