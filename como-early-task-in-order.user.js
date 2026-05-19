@@ -597,8 +597,8 @@
       '<div id="cbt-header">' +
         '<span id="cbt-title">\u23F1 Batcher Timers</span>' +
         '<div id="cbt-controls">' +
-          '<span id="cbt-collapse-btn" title="Collapse/Expand" style="font-size:22px;cursor:pointer;">🔼</span>' +
           '<span id="cbt-theme-btn" title="Toggle Dark/Light" style="font-size:22px;cursor:pointer;">🌙</span>' +
+          '<span id="cbt-collapse-btn" title="Collapse/Expand" style="font-size:22px;cursor:pointer;">🔼</span>' +
         '</div>' +
       '</div>' +
       '<div id="cbt-stats-bar" style="display:flex;justify-content:space-around;padding:8px 10px;border-bottom:1px solid #ddd;background:#fafafa;">' +
