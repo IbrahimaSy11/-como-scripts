@@ -594,19 +594,19 @@
           '<span id="cbt-collapse-btn" title="Collapse/Expand" style="font-size:22px;cursor:pointer;">🔼</span>' +
         '</div>' +
       '</div>' +
-      '<div id="cbt-stats-bar" style="display:flex;justify-content:space-around;padding:8px 10px;border-bottom:1px solid #ddd;background:#fafafa;">' +
-        '<div style="text-align:center;">' +
-          '<span style="font-size:22px;">\uD83E\uDDBA</span>' +
-          '<span id="cbt-label-batchers" style="font-size:26px;font-weight:700;color:#333;margin-left:5px;">Batchers: <b id="cbt-stat-ip" style="color:#0066cc;">—</b></span>' +
+      '<div id="cbt-stats-bar" style="display:flex;justify-content:space-around;align-items:center;flex-wrap:wrap;padding:8px 10px;border-bottom:1px solid #ddd;background:#fafafa;">' +
+        '<div style="display:flex;align-items:center;justify-content:center;text-align:center;flex:1;min-width:0;">' +
+          '<span style="font-size:22px;line-height:1;flex-shrink:0;">\uD83E\uDDBA</span>' +
+          '<span id="cbt-label-batchers" style="font-size:26px;font-weight:700;color:#333;margin-left:5px;white-space:nowrap;">Batchers: <b id="cbt-stat-ip" style="color:#0066cc;">—</b></span>' +
         '</div>' +
-        '<div style="text-align:center;">' +
-          '<span style="font-size:22px;">\uD83D\uDCCA</span>' +
-          '<span id="cbt-label-rec" style="font-size:26px;font-weight:700;color:#333;margin-left:5px;">Recommended: <b id="cbt-stat-rec" style="color:#0066cc;">—</b>' +
+        '<div style="display:flex;align-items:center;justify-content:center;text-align:center;flex:1;min-width:0;">' +
+          '<span style="font-size:22px;line-height:1;flex-shrink:0;">\uD83D\uDCCA</span>' +
+          '<span id="cbt-label-rec" style="font-size:26px;font-weight:700;color:#333;margin-left:5px;white-space:nowrap;">Recommended: <b id="cbt-stat-rec" style="color:#0066cc;">—</b>' +
           '<span id="cbt-stat-dot" style="display:inline-block;width:16px;height:16px;border-radius:50%;background:gray;box-shadow:0 0 6px gray;vertical-align:middle;margin-left:8px;"></span></b></span>' +
         '</div>' +
-        '<div style="text-align:center;">' +
-          '<span style="font-size:22px;">\uD83D\uDCE6</span>' +
-          '<span id="cbt-label-remaining" style="font-size:26px;font-weight:700;color:#333;margin-left:5px;">Remaining: <b id="cbt-stat-rem" style="color:#0066cc;">—</b></span>' +
+        '<div style="display:flex;align-items:center;justify-content:center;text-align:center;flex:1;min-width:0;">' +
+          '<span style="font-size:22px;line-height:1;flex-shrink:0;">\uD83D\uDCE6</span>' +
+          '<span id="cbt-label-remaining" style="font-size:26px;font-weight:700;color:#333;margin-left:5px;white-space:nowrap;">Remaining: <b id="cbt-stat-rem" style="color:#0066cc;">—</b></span>' +
         '</div>' +
       '</div>' +
       '<div id="cbt-tabs">' +
