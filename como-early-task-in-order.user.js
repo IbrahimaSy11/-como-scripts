@@ -753,9 +753,12 @@
       var body = panel2.querySelector('#cbt-body');
       var tabs = panel2.querySelector('#cbt-tabs');
       if (!body) return;
-      var newH = Math.max(270, dragStartH + (e.clientY - dragStartY));
+      // Get the actual content height — stop drag at last row
+      var contentH = body.scrollHeight || 9999;
+      var newH = Math.min(contentH, Math.max(350, dragStartH + (e.clientY - dragStartY)));
       body.style.height = newH + 'px';
       body.style.maxHeight = newH + 'px';
+      body.style.minHeight = newH + 'px';
       if (tabs) tabs.style.display = '';
       try { localStorage.setItem('cbt_body_h', newH); } catch(ex) {}
     });
