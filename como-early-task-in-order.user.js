@@ -701,21 +701,25 @@
       var body = panel2.querySelector('#cbt-body');
       var tabs = panel2.querySelector('#cbt-tabs');
       var drag = panel2.querySelector('#cbt-drag-bottom');
-      var currentH = body ? body.offsetHeight : 270;
+      var savedH = parseFloat(localStorage.getItem('cbt_body_h') || '350');
+
       if (isCollapsed) {
+        // Expand back to default
         isCollapsed = false;
-        if (body) { body.style.display = ''; body.style.height = '350px'; body.style.maxHeight = '350px'; }
+        if (body) { body.style.display = ''; body.style.height = '350px'; body.style.maxHeight = '350px'; body.style.minHeight = '350px'; }
         if (tabs) tabs.style.display = '';
         if (drag) drag.style.display = '';
         collapseBtn.textContent = '🔼';
-        try { localStorage.setItem('cbt_body_h', 270); } catch(ex) {}
-      } else if (currentH > 270) {
-        if (body) { body.style.height = '350px'; body.style.maxHeight = '350px'; }
+        try { localStorage.setItem('cbt_body_h', 350); } catch(ex) {}
+      } else if (savedH > 350) {
+        // Dragged down — first press resets to default
+        if (body) { body.style.height = '350px'; body.style.maxHeight = '350px'; body.style.minHeight = '350px'; }
         collapseBtn.textContent = '🔼';
-        try { localStorage.setItem('cbt_body_h', 270); } catch(ex) {}
+        try { localStorage.setItem('cbt_body_h', 350); } catch(ex) {}
       } else {
+        // At default — collapse
         isCollapsed = true;
-        if (body) { body.style.display = 'none'; }
+        if (body) { body.style.display = 'none'; body.style.minHeight = '0'; }
         if (tabs) tabs.style.display = 'none';
         if (drag) drag.style.display = 'none';
         collapseBtn.textContent = '🔽';
