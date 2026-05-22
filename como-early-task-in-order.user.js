@@ -91,7 +91,7 @@
     }
     .cbt-tab:hover { color: #333; }
     .cbt-tab.active { color: #0066cc; border-bottom: 2px solid #0066cc; }
-    #cbt-body { padding: 6px 8px 8px; height: 270px; max-height: 270px; overflow-y: auto; background: #fff; }
+    #cbt-body { padding: 6px 8px 8px; height: 500px; max-height: 500px; overflow-y: auto; background: #fff; }
     #cbt-table, #cbt-hist-table, #cbt-weekly-table { width: 100%; border-collapse: collapse; }
     #cbt-table thead tr, #cbt-hist-table thead tr, #cbt-weekly-table thead tr { border-bottom: 1px solid #ddd; }
     #cbt-table th, #cbt-hist-table th, #cbt-weekly-table th {
@@ -103,6 +103,7 @@
     #cbt-table td, #cbt-hist-table td, #cbt-weekly-table td {
       padding: 7px 6px; border-bottom: 1px solid #f0f0f0;
       vertical-align: middle; text-align: center; font-size: 22px; color: #333;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     }
     #cbt-table td:first-child, #cbt-hist-table td:first-child,
     #cbt-weekly-table td:first-child { text-align: left; }
@@ -615,10 +616,10 @@
       '</div>' +
       '<div id="cbt-body">' +
         '<div id="cbt-live-view">' +
-          '<table id="cbt-table"><thead><tr>' +
-            '<th class="cbt-sortable-live" data-sort="assoc">Associate</th>' +
-            '<th class="cbt-sortable-live" data-sort="elapsed">Elapsed</th>' +
-            '<th class="cbt-sortable-live" data-sort="rate">Bags/min \u25BC</th>' +
+          '<table id="cbt-table" style="table-layout:fixed;width:100%;"><thead><tr>' +
+            '<th class="cbt-sortable-live" data-sort="assoc" style="width:40%;text-align:left;">Associate</th>' +
+            '<th class="cbt-sortable-live" data-sort="elapsed" style="width:30%;text-align:center;">Elapsed</th>' +
+            '<th class="cbt-sortable-live" data-sort="rate" style="width:30%;text-align:center;">Bags/min \u25BC</th>' +
           '</tr></thead><tbody id="cbt-tbody"></tbody></table>' +
           '<div id="cbt-empty">No active batching tasks</div>' +
           '<div id="cbt-updated"></div>' +
@@ -703,13 +704,13 @@
       var currentH = body ? body.offsetHeight : 270;
       if (isCollapsed) {
         isCollapsed = false;
-        if (body) { body.style.display = ''; body.style.height = '270px'; body.style.maxHeight = '270px'; }
+        if (body) { body.style.display = ''; body.style.height = '500px'; body.style.maxHeight = '500px'; }
         if (tabs) tabs.style.display = '';
         if (drag) drag.style.display = '';
         collapseBtn.textContent = '🔼';
         try { localStorage.setItem('cbt_body_h', 270); } catch(ex) {}
       } else if (currentH > 270) {
-        if (body) { body.style.height = '270px'; body.style.maxHeight = '270px'; }
+        if (body) { body.style.height = '500px'; body.style.maxHeight = '500px'; }
         collapseBtn.textContent = '🔼';
         try { localStorage.setItem('cbt_body_h', 270); } catch(ex) {}
       } else {
@@ -734,7 +735,7 @@
       applyTheme();
     });
 
-    var isDragging = false, dragStartY = 0, dragStartH = 270;
+    var isDragging = false, dragStartY = 0, dragStartH = 500;
     panel2.querySelector('#cbt-drag-bottom').addEventListener('mousedown', function(e) {
       isDragging = true;
       dragStartY = e.clientY;
