@@ -227,7 +227,22 @@
     var data = cards.map(function (card) { return { card: card, btMs: getBatchTarget(card) }; });
     data.sort(function (a, b) {
       var hasA = a.btMs != null, hasB = b.btMs != null;
-      if (hasA && hasB) return a.btMs - b.btMs;
+      if (hasA && hasB) {
+        if (a.btMs !== b.btMs) return a.btMs - b.btMs;
+        // Same time — sort by most total packages (second number in ✓XX/YY badge)
+        var getPkgs = function(card) {
+          var text = card.textContent || '';
+          var best = 0;
+          var re = /(\d+)\/(\d+)/g;
+          var m;
+          while ((m = re.exec(text)) !== null) {
+            var total = parseInt(m[2], 10);
+            if (total > best) best = total;
+          }
+          return best;
+        };
+        return getPkgs(b.card) - getPkgs(a.card);
+      }
       if (hasA) return -1; if (hasB) return 1; return 0;
     });
     var current = Array.from(container.querySelectorAll(':scope > job-card'));
