@@ -91,7 +91,7 @@
     }
     .cbt-tab:hover { color: #333; }
     .cbt-tab.active { color: #0066cc; border-bottom: 2px solid #0066cc; }
-    #cbt-body { padding: 6px 8px 8px; height: 500px; max-height: 500px; overflow-y: auto; background: #fff; }
+    #cbt-body { padding: 6px 8px 8px; height: 350px; max-height: 350px; min-height: 350px; overflow-y: auto; background: #fff; }
     #cbt-table, #cbt-hist-table, #cbt-weekly-table { width: 100%; border-collapse: collapse; }
     #cbt-table thead tr, #cbt-hist-table thead tr, #cbt-weekly-table thead tr { border-bottom: 1px solid #ddd; }
     #cbt-table th, #cbt-hist-table th, #cbt-weekly-table th {
@@ -704,13 +704,13 @@
       var currentH = body ? body.offsetHeight : 270;
       if (isCollapsed) {
         isCollapsed = false;
-        if (body) { body.style.display = ''; body.style.height = '500px'; body.style.maxHeight = '500px'; }
+        if (body) { body.style.display = ''; body.style.height = '350px'; body.style.maxHeight = '350px'; }
         if (tabs) tabs.style.display = '';
         if (drag) drag.style.display = '';
         collapseBtn.textContent = '🔼';
         try { localStorage.setItem('cbt_body_h', 270); } catch(ex) {}
       } else if (currentH > 270) {
-        if (body) { body.style.height = '500px'; body.style.maxHeight = '500px'; }
+        if (body) { body.style.height = '350px'; body.style.maxHeight = '350px'; }
         collapseBtn.textContent = '🔼';
         try { localStorage.setItem('cbt_body_h', 270); } catch(ex) {}
       } else {
@@ -735,7 +735,7 @@
       applyTheme();
     });
 
-    var isDragging = false, dragStartY = 0, dragStartH = 500;
+    var isDragging = false, dragStartY = 0, dragStartH = 350;
     panel2.querySelector('#cbt-drag-bottom').addEventListener('mousedown', function(e) {
       isDragging = true;
       dragStartY = e.clientY;
@@ -817,7 +817,11 @@
       else{va=ra.elapsedSec||0;vb=rb.elapsedSec||0;}
       return liveSortAsc?va-vb:vb-va;
     });
-    if(rows.length===0){tbody.innerHTML='';empty.style.display='block';return;}
+    if(rows.length===0){tbody.innerHTML='';empty.style.display='block';
+      var body2=document.querySelector('#cbt-body');
+      if(body2&&!body2.style.height){body2.style.height='350px';body2.style.maxHeight='350px';}
+      return;}
+
     empty.style.display='none';
     var html='';
     for(var i=0;i<rows.length;i++){
