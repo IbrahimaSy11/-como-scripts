@@ -416,9 +416,12 @@
             if (r.scanRate && r.scanRate > 0) liveRates.push(r.scanRate);
           }
         });
+        // Use live rates if available, otherwise use Drive JSON rate or 2.0 bags/min default
         var avgRatePerBatcher = liveRates.length > 0
           ? (liveRates.reduce(function(s,r){return s+r;},0) / liveRates.length) * 60
           : batchRateCache;
+        // Safety: never let rate be unrealistically low
+        if (avgRatePerBatcher < 60) avgRatePerBatcher = 120; // minimum 1.0 bag/min = 60 bags/hr
 
         var recommended = 0;
         if (remaining > 0 && avgRatePerBatcher > 0) {
