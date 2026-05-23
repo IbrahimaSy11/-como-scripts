@@ -227,22 +227,7 @@
     var data = cards.map(function (card) { return { card: card, btMs: getBatchTarget(card) }; });
     data.sort(function (a, b) {
       var hasA = a.btMs != null, hasB = b.btMs != null;
-      if (hasA && hasB) {
-        if (a.btMs !== b.btMs) return a.btMs - b.btMs;
-        // Same time — sort by most total packages (second number in ✓XX/YY badge)
-        var getPkgs = function(card) {
-          var text = card.textContent || '';
-          var best = 0;
-          var re = /(\d+)\/(\d+)/g;
-          var m;
-          while ((m = re.exec(text)) !== null) {
-            var total = parseInt(m[2], 10);
-            if (total > best) best = total;
-          }
-          return best;
-        };
-        return getPkgs(b.card) - getPkgs(a.card);
-      }
+      if (hasA && hasB) return a.btMs - b.btMs;
       if (hasA) return -1; if (hasB) return 1; return 0;
     });
     var current = Array.from(container.querySelectorAll(':scope > job-card'));
@@ -421,9 +406,7 @@
         );
         var nowEpoch = Date.now() / 1000;
         var timeRemaining = (latestTarget - nowEpoch) / 3600;
-        var remainingPackages = remaining;
-        var timeLossHours = (45 * activeJobs.length) / 3600;
-        var adjustedTimeRemaining = timeRemaining - timeLossHours;
+        var adjustedTimeRemaining = timeRemaining;
         if (adjustedTimeRemaining <= 0) adjustedTimeRemaining = 0.5;
 
         var liveRates = [];
@@ -438,8 +421,8 @@
           : batchRateCache;
 
         var recommended = 0;
-        if (remainingPackages > 0 && avgRatePerBatcher > 0) {
-          recommended = Math.ceil(remainingPackages / (avgRatePerBatcher * adjustedTimeRemaining));
+        if (remaining > 0 && avgRatePerBatcher > 0) {
+          recommended = Math.ceil(remaining / (avgRatePerBatcher * adjustedTimeRemaining));
         }
         if (recommended < 0 || isNaN(recommended)) recommended = 0;
         if (recommended > 38) recommended = 38;
