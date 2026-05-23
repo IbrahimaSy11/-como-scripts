@@ -575,7 +575,18 @@
   async function pollActiveTasks() {
     try {
       var res = await _origFetch(COMO_BASE+'/store/'+STORE_ID+'/activeJobsWithSiteSummary',{credentials:'include',headers:{Accept:'application/json'}});
-      if(res.ok) ingestData(await res.json());
+      if(res.ok) {
+        var freshData = await res.json();
+        // Clear entries from taskCache that are no longer active
+        var activeRefs = new Set();
+        if (Array.isArray(freshData)) {
+          freshData.forEach(function(d){ if(d.shortClientRef && d.state==='BATCHING') activeRefs.add(d.shortClientRef); });
+        }
+        taskCache.forEach(function(val, key) {
+          if (!activeRefs.has(key)) taskCache.delete(key);
+        });
+        ingestData(freshData);
+      }
     } catch(e){}
     for(var entry of taskCache.entries()){
       var data=entry[1]; if(!data.jobId) continue;
