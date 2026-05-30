@@ -59,7 +59,9 @@
     #cbt-panel.dark .cbt-hist-meta { color: #e6edf3 !important; }
     #cbt-panel.dark .cbt-ws-val { color: #e6edf3 !important; }
     #cbt-panel.dark .cbt-ws-label { color: #aaa !important; }
-    #cbt-panel.dark #cbt-search-input, #cbt-panel.dark #cbt-hist-search-input { background: #111 !important; border-color: #333 !important; color: #fff !important; }
+    #cbt-panel.dark #cbt-search-input, #cbt-panel.dark #cbt-hist-search-input, #cbt-panel.dark #cbt-live-search-input { background: #111 !important; border-color: #333 !important; color: #fff !important; }
+    #cbt-panel.dark #cbt-live-search, #cbt-panel.dark #cbt-weekly-search, #cbt-panel.dark #cbt-hist-search { background: #000 !important; }
+    #cbt-panel.dark #cbt-live-search-clear, #cbt-panel.dark #cbt-hist-search-clear, #cbt-panel.dark #cbt-weekly-search-clear { color: #555 !important; }
     #cbt-panel.dark #cbt-updated { color: #555 !important; }
     #cbt-panel.dark #cbt-weekly-summary, #cbt-panel.dark #cbt-hist-summary { border-bottom-color: #333 !important; }
     #cbt-panel.dark #cbt-drag-bottom { background: #222 !important; }
@@ -138,12 +140,25 @@
     .cbt-ws-stat { text-align: center; }
     .cbt-ws-val { font-family: "Courier New", monospace; font-size: 22px; font-weight: 700; color: #333; display: block; }
     .cbt-ws-label { font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 0.07em; }
-    #cbt-weekly-search, #cbt-hist-search { padding: 6px 4px 2px; text-align: center; }
-    #cbt-search-input, #cbt-hist-search-input {
+    #cbt-weekly-search, #cbt-hist-search, #cbt-live-search { padding: 6px 4px 2px; text-align: center; }
+    #cbt-search-input, #cbt-hist-search-input, #cbt-live-search-input {
       width: 95%; padding: 6px 10px; background: #fff; border: 1px solid #ccc;
       border-radius: 6px; color: #333; font-size: 16px; outline: none;
     }
-    #cbt-search-input:focus, #cbt-hist-search-input:focus { border-color: #0066cc; }
+    #cbt-search-input:focus, #cbt-hist-search-input:focus, #cbt-live-search-input:focus { border-color: #0066cc; }
+    #cbt-live-results { margin-top: 6px; }
+    .cbt-search-result-section { font-size: 13px; font-weight: 800; color: #555; text-transform: uppercase; letter-spacing: 0.1em; padding: 8px 8px 6px; border-top: 3px solid #333; border-bottom: 1px solid #ddd; margin-top: 6px; background: #f5f5f5; }
+    .cbt-search-row { display: table; width: 100%; padding: 0; border-bottom: 1px solid #f0f0f0; margin: 0; box-sizing: border-box; height: 36px; }
+    .cbt-search-row-name { display: table-cell; width: 35%; font-size: 18px; font-weight: 700; color: #333; text-align: left; vertical-align: middle; padding: 5px 4px 5px 8px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; transition: color 0.15s; }
+    .cbt-search-row-name:hover { color: #0066cc !important; }
+    #cbt-panel.dark .cbt-search-row-name:hover { color: #58a6ff !important; }
+    .cbt-search-row-mid { display: table-cell; width: 40%; font-size: 15px; color: #888; text-align: center; vertical-align: middle; padding: 5px 4px; font-family: "Courier New", monospace; letter-spacing: 0; white-space: nowrap; }
+    .cbt-search-row-rate { display: table-cell; width: 25%; font-size: 20px; font-weight: 700; text-align: right; vertical-align: middle; padding: 5px 8px 5px 4px; font-family: "Courier New", monospace; }
+    .cbt-search-row .cbt-hist-rate { font-size: 20px !important; line-height: 1 !important; display: inline; margin: 0; padding: 0; }
+    #cbt-panel.dark .cbt-search-row { border-bottom-color: #222 !important; }
+    #cbt-panel.dark .cbt-search-result-section { color: #aaa !important; border-top-color: #58a6ff !important; border-bottom-color: #333 !important; background: #111 !important; }
+    #cbt-panel.dark .cbt-search-row-name { color: #e6edf3 !important; }
+    #cbt-panel.dark .cbt-search-row-mid { color: #666 !important; }
     .cbt-sortable, .cbt-sortable-live, .cbt-sortable-hist { cursor: pointer; user-select: none; }
     .cbt-sortable:hover, .cbt-sortable-live:hover, .cbt-sortable-hist:hover { color: #0066cc; }
     .cbt-miss-dot { margin-left: 4px; font-size: 16px; vertical-align: middle; }
@@ -452,7 +467,7 @@
   var taskCache = new Map();
   var activeTab = 'live';
   var weeklySortKey = 'avgRate', weeklySortAsc = false, weeklySearchTerm = '';
-  var liveSortKey = 'rate', liveSortAsc = false;
+  var liveSortKey = 'rate', liveSortAsc = false, liveSearchTerm = '';
   var historySortKey = 'avgRate', historySortAsc = false, historySearchTerm = '';
 
   function todayStr() { return new Date().toLocaleDateString('en-US'); }
@@ -628,16 +643,18 @@
       '</div>' +
       '<div id="cbt-body">' +
         '<div id="cbt-live-view">' +
+          '<div id="cbt-live-search" style="padding:6px 4px 2px;text-align:center;display:flex;align-items:center;gap:6px;"><input id="cbt-live-search-input" style="flex:1;" type="text" placeholder="Search any associate..."/><button id="cbt-live-search-clear" style="font-size:16px;border:none;background:none;cursor:pointer;color:#888;padding:0 4px;">✕</button></div>' +
           '<table id="cbt-table" style="table-layout:fixed;width:100%;"><thead><tr>' +
             '<th class="cbt-sortable-live" data-sort="assoc" style="width:40%;text-align:left;">Associate</th>' +
             '<th class="cbt-sortable-live" data-sort="elapsed" style="width:30%;text-align:center;">Elapsed</th>' +
             '<th class="cbt-sortable-live" data-sort="rate" style="width:30%;text-align:center;">Bags/min \u25BC</th>' +
           '</tr></thead><tbody id="cbt-tbody"></tbody></table>' +
           '<div id="cbt-empty">No active batching tasks</div>' +
+          '<div id="cbt-live-results"></div>' +
           '<div id="cbt-updated"></div>' +
         '</div>' +
         '<div id="cbt-history-view" style="display:none">' +
-          '<div id="cbt-hist-search"><input id="cbt-hist-search-input" type="text" placeholder="Search associate..."/></div>' +
+          '<div id="cbt-hist-search" style="display:flex;align-items:center;gap:6px;padding:6px 4px 2px;"><input id="cbt-hist-search-input" style="flex:1;" type="text" placeholder="Search associate..."/><button id="cbt-hist-search-clear" style="font-size:16px;border:none;background:none;cursor:pointer;color:#888;padding:0 4px;">✕</button></div>' +
           '<div id="cbt-hist-summary"></div>' +
           '<table id="cbt-hist-table"><thead><tr>' +
             '<th class="cbt-sortable-hist" data-sort="assoc">Associate</th>' +
@@ -646,9 +663,10 @@
             '<th class="cbt-sortable-hist" data-sort="avgRate">Avg Rate \u25BC</th>' +
           '</tr></thead><tbody id="cbt-hist-tbody"></tbody></table>' +
           '<div id="cbt-hist-empty">No history yet today</div>' +
+          '<div id="cbt-hist-cross"></div>' +
         '</div>' +
         '<div id="cbt-weekly-view" style="display:none">' +
-          '<div id="cbt-weekly-search"><input id="cbt-search-input" type="text" placeholder="Search associate..."/></div>' +
+          '<div id="cbt-weekly-search" style="display:flex;align-items:center;gap:6px;padding:6px 4px 2px;"><input id="cbt-search-input" style="flex:1;" type="text" placeholder="Search associate..."/><button id="cbt-weekly-search-clear" style="font-size:16px;border:none;background:none;cursor:pointer;color:#888;padding:0 4px;">✕</button></div>' +
           '<div id="cbt-weekly-summary"></div>' +
           '<table id="cbt-weekly-table"><thead><tr>' +
             '<th class="cbt-sortable" data-sort="assoc">Associate</th>' +
@@ -659,6 +677,7 @@
             '<th class="cbt-sortable" data-sort="hrs">Hrs</th>' +
           '</tr></thead><tbody id="cbt-weekly-tbody"></tbody></table>' +
           '<div id="cbt-weekly-empty">No weekly data yet</div>' +
+          '<div id="cbt-weekly-cross"></div>' +
         '</div>' +
       '</div>' +
       '<div id="cbt-drag-bottom" title="Drag to resize"></div>';
@@ -699,11 +718,22 @@
         panel2.querySelectorAll('.cbt-tab').forEach(function(t){t.classList.remove('active');});
         tab.classList.add('active');
         activeTab = tab.dataset.tab;
+        // Clear all search bars on tab switch
+        var lsi = document.getElementById('cbt-live-search-input');
+        var hsi = document.getElementById('cbt-hist-search-input');
+        var wsi = document.getElementById('cbt-search-input');
+        if (lsi) { lsi.value = ''; liveSearchTerm = ''; }
+        if (hsi) { hsi.value = ''; historySearchTerm = ''; }
+        if (wsi) { wsi.value = ''; weeklySearchTerm = ''; }
+        // Clear live results
+        var lr = document.getElementById('cbt-live-results');
+        if (lr) lr.innerHTML = '';
         document.getElementById('cbt-live-view').style.display    = activeTab==='live'    ? '' : 'none';
         document.getElementById('cbt-history-view').style.display = activeTab==='history' ? '' : 'none';
         document.getElementById('cbt-weekly-view').style.display  = activeTab==='weekly'  ? '' : 'none';
         if (activeTab==='history') renderHistory();
         if (activeTab==='weekly')  renderWeekly();
+        if (activeTab==='live')    renderLive();
       });
     });
 
@@ -798,9 +828,37 @@
       });
     });
 
+    // Click to copy search result names
+    document.addEventListener('click', function(e) {
+      var el = e.target.closest('.cbt-search-row-name');
+      if (!el || !panel2.contains(el)) return;
+      var text = el.textContent.trim();
+      navigator.clipboard.writeText(text).then(function() {
+        var prev = el.style.color;
+        el.style.color = '#2a9d2a';
+        setTimeout(function() { el.style.color = prev; }, 600);
+      });
+    });
+
+    document.addEventListener('click', function(e) {
+      if (e.target.id === 'cbt-live-search-clear') {
+        var inp = document.getElementById('cbt-live-search-input');
+        if (inp) { inp.value = ''; liveSearchTerm = ''; renderLive(); renderLiveSearch(''); }
+      }
+      if (e.target.id === 'cbt-hist-search-clear') {
+        var inp2 = document.getElementById('cbt-hist-search-input');
+        if (inp2) { inp2.value = ''; historySearchTerm = ''; renderHistory(); }
+      }
+      if (e.target.id === 'cbt-weekly-search-clear') {
+        var inp3 = document.getElementById('cbt-search-input');
+        if (inp3) { inp3.value = ''; weeklySearchTerm = ''; renderWeekly(); }
+      }
+    });
+
     document.addEventListener('input', function(e) {
       if (e.target.id==='cbt-search-input') { weeklySearchTerm=e.target.value; renderWeekly(); }
       if (e.target.id==='cbt-hist-search-input') { historySearchTerm=e.target.value; renderHistory(); }
+      if (e.target.id==='cbt-live-search-input') { liveSearchTerm=e.target.value; renderLive(); renderLiveSearch(e.target.value); }
     });
 
     document.addEventListener('click', function(e) {
@@ -825,10 +883,64 @@
     });
   }
 
+  /* ── Live Search — searches across Today and Weekly ── */
+  function renderLiveSearch(term) {
+    var resultsEl = document.getElementById('cbt-live-results');
+    if (!resultsEl) return;
+    if (!term || term.trim() === '') { resultsEl.innerHTML = ''; return; }
+    term = term.toLowerCase().trim();
+    var html = '';
+
+    // Search Today history
+    var history = loadHistory(), histEntries = Object.values(history).filter(function(e){ return e.assoc.toLowerCase().indexOf(term) !== -1; });
+    if (histEntries.length > 0) {
+      html += '<div class="cbt-search-result-section">📅 Today</div>';
+      histEntries.forEach(function(e) {
+        var rateCls = e.avgRate >= WARN_RATE ? 'good' : e.avgRate >= ALERT_RATE ? 'warn' : 'alert';
+        html += '<div class="cbt-search-row"><span class="cbt-search-row-name">' + e.assoc + '</span>' +
+        '<span class="cbt-search-row-mid"><span style="display:inline-block;width:45px;text-align:right;">' + e.runs + '</span> runs | <span style="display:inline-block;width:50px;text-align:left;">' + e.totalPkgs + '</span> pkgs</span>' +
+        '<span class="cbt-search-row-rate cbt-hist-rate ' + rateCls + '">' + e.avgRate.toFixed(1) + '</span></div>';
+      });
+    }
+
+    // Search Weekly history
+    var weekly = pruneWeeklyOlderThan(WEEKLY_DAYS), agg = {};
+    for (var dk of Object.keys(weekly)) {
+      for (var a of Object.keys(weekly[dk])) {
+        if (a.toLowerCase().indexOf(term) === -1) continue;
+        if (!agg[a]) agg[a] = { assoc:a, totalPkgs:0, totalSec:0, runs:0, daysSet:new Set() };
+        agg[a].totalPkgs += weekly[dk][a].totalPkgs;
+        agg[a].totalSec  += weekly[dk][a].totalSec;
+        agg[a].runs      += weekly[dk][a].runs;
+        agg[a].daysSet.add(dk);
+      }
+    }
+    var weeklyEntries = Object.values(agg);
+    if (weeklyEntries.length > 0) {
+      html += '<div class="cbt-search-result-section">📆 Weekly</div>';
+      weeklyEntries.forEach(function(e) {
+        var avgRate = e.totalPkgs / (e.totalSec / 60);
+        var rateCls = avgRate >= WARN_RATE ? 'good' : avgRate >= ALERT_RATE ? 'warn' : 'alert';
+        html += '<div class="cbt-search-row"><span class="cbt-search-row-name">' + e.assoc + '</span>' +
+        '<span class="cbt-search-row-mid"><span style="display:inline-block;width:45px;text-align:right;">' + e.daysSet.size + '</span> days | <span style="display:inline-block;width:50px;text-align:left;">' + e.totalPkgs + '</span> pkgs</span>' +
+        '<span class="cbt-search-row-rate cbt-hist-rate ' + rateCls + '">' + avgRate.toFixed(1) + '</span></div>';
+      });
+    }
+
+    if (html === '') html = '<div style="text-align:center;color:#aaa;padding:10px;font-style:italic;font-size:14px;">No results found for "' + term + '"</div>';
+    resultsEl.innerHTML = html;
+  }
+
   function renderLive() {
     var tbody=document.querySelector('#cbt-tbody'), empty=document.querySelector('#cbt-empty');
     if (!tbody||!empty) return;
-    var rows=[]; taskCache.forEach(function(d){if(d.state==='BATCHING')rows.push(d);});
+    var rows=[]; taskCache.forEach(function(d){
+      if(d.state==='BATCHING') {
+        if (!liveSearchTerm) { rows.push(d); return; }
+        var name = (d.associateId||d.associate||d.driverAssignment||d.shortClientRef||'').toLowerCase();
+        if (name.indexOf(liveSearchTerm.toLowerCase()) !== -1) rows.push(d);
+      }
+    });
     rows.sort(function(a,b){
       var ra=computeRow(a),rb=computeRow(b),va,vb;
       if(liveSortKey==='assoc'){va=(a.associateId||a.associate||'').toLowerCase();vb=(b.associateId||b.associate||'').toLowerCase();return liveSortAsc?va.localeCompare(vb):vb.localeCompare(va);}
@@ -864,7 +976,10 @@
     var tbody=document.querySelector('#cbt-hist-tbody'),empty=document.querySelector('#cbt-hist-empty'),summary=document.querySelector('#cbt-hist-summary');
     if(!tbody||!empty) return;
     var history=loadHistory(),entries=Object.values(history);
-    if(entries.length===0){tbody.innerHTML='';empty.style.display='block';if(summary)summary.innerHTML='';return;}
+    if(entries.length===0){tbody.innerHTML='';empty.style.display='block';if(summary)summary.innerHTML='';
+      // Still show weekly results if searching
+      if(historySearchTerm) renderHistoryCrossSearch(historySearchTerm);
+      return;}
     empty.style.display='none';
     if(summary){
       var tA=entries.length,tS=entries.reduce(function(s,e){return s+e.totalSec;},0);
@@ -895,6 +1010,42 @@
       html+='<td><span class="cbt-hist-rate '+rateCls+'">'+e.avgRate.toFixed(1)+'</span></td></tr>';
     }
     tbody.innerHTML=html;
+
+    // Show weekly peek when searching
+    if(historySearchTerm) renderHistoryCrossSearch(historySearchTerm);
+    else {
+      var cross = document.getElementById('cbt-hist-cross');
+      if(cross) cross.innerHTML='';
+    }
+  }
+
+  function renderHistoryCrossSearch(term) {
+    var crossEl = document.getElementById('cbt-hist-cross');
+    if(!crossEl) return;
+    if(!term){ crossEl.innerHTML=''; return; }
+    term = term.toLowerCase();
+    var weekly = pruneWeeklyOlderThan(WEEKLY_DAYS), agg = {};
+    for(var dk of Object.keys(weekly)){
+      for(var a of Object.keys(weekly[dk])){
+        if(a.toLowerCase().indexOf(term)===-1) continue;
+        if(!agg[a]) agg[a]={assoc:a,totalPkgs:0,totalSec:0,runs:0,daysSet:new Set()};
+        agg[a].totalPkgs+=weekly[dk][a].totalPkgs;
+        agg[a].totalSec+=weekly[dk][a].totalSec;
+        agg[a].runs+=weekly[dk][a].runs;
+        agg[a].daysSet.add(dk);
+      }
+    }
+    var entries = Object.values(agg);
+    if(entries.length===0){ crossEl.innerHTML=''; return; }
+    var html='<div class="cbt-search-result-section">📆 Also in Weekly</div>';
+    entries.forEach(function(e){
+      var avgRate=e.totalPkgs/(e.totalSec/60);
+      var rateCls=avgRate>=WARN_RATE?'good':avgRate>=ALERT_RATE?'warn':'alert';
+      html+='<div class="cbt-search-row"><span class="cbt-search-row-name">'+e.assoc+'</span>' +
+      '<span class="cbt-search-row-mid"><span style="display:inline-block;width:45px;text-align:right;">'+e.daysSet.size+'</span> days | <span style="display:inline-block;width:50px;text-align:left;">'+e.totalPkgs+'</span> pkgs</span>' +
+      '<span class="cbt-search-row-rate cbt-hist-rate '+rateCls+'">'+avgRate.toFixed(1)+'</span></div>';
+    });
+    crossEl.innerHTML=html;
   }
 
   function renderWeekly() {
@@ -940,6 +1091,31 @@
       html+='<td><span class="cbt-hist-meta">'+fmtHours(e.totalSec)+'</span></td></tr>';
     }
     tbody.innerHTML=html;
+
+    // Show today peek when searching in weekly
+    if(weeklySearchTerm) renderWeeklyCrossSearch(weeklySearchTerm);
+    else {
+      var cross2 = document.getElementById('cbt-weekly-cross');
+      if(cross2) cross2.innerHTML='';
+    }
+  }
+
+  function renderWeeklyCrossSearch(term) {
+    var crossEl = document.getElementById('cbt-weekly-cross');
+    if(!crossEl) return;
+    if(!term){ crossEl.innerHTML=''; return; }
+    term = term.toLowerCase();
+    var history = loadHistory();
+    var entries = Object.values(history).filter(function(e){ return e.assoc.toLowerCase().indexOf(term)!==-1; });
+    if(entries.length===0){ crossEl.innerHTML=''; return; }
+    var html='<div class="cbt-search-result-section">📅 Also in Today</div>';
+    entries.forEach(function(e){
+      var rateCls=e.avgRate>=WARN_RATE?'good':e.avgRate>=ALERT_RATE?'warn':'alert';
+      html+='<div class="cbt-search-row"><span class="cbt-search-row-name">'+e.assoc+'</span>' +
+      '<span class="cbt-search-row-mid"><span style="display:inline-block;width:45px;text-align:right;">'+e.runs+'</span> runs | <span style="display:inline-block;width:50px;text-align:left;">'+e.totalPkgs+'</span> pkgs</span>' +
+      '<span class="cbt-search-row-rate cbt-hist-rate '+rateCls+'">'+e.avgRate.toFixed(1)+'</span></div>';
+    });
+    crossEl.innerHTML=html;
   }
 
   function tickLive() {
