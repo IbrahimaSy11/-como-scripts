@@ -592,21 +592,23 @@
       var res = await _origFetch(COMO_BASE+'/store/'+STORE_ID+'/activeJobsWithSiteSummary',{credentials:'include',headers:{Accept:'application/json'}});
       if(res.ok) {
         var freshData = await res.json();
-        // Clear entries from taskCache that are no longer active
+        // Build set of currently active BATCHING refs
         var activeRefs = new Set();
-        if (Array.isArray(freshData)) {
-          freshData.forEach(function(d){ if(d.shortClientRef && d.state==='BATCHING') activeRefs.add(d.shortClientRef); });
-        }
+        var items = Array.isArray(freshData) ? freshData : [];
+        // Also check nested arrays
+        ['summaries','tasks','results','items','jobs','data'].forEach(function(k){
+          if(Array.isArray(freshData[k])) items = items.concat(freshData[k]);
+        });
+        items.forEach(function(d){
+          if(d.shortClientRef && d.state==='BATCHING') activeRefs.add(d.shortClientRef);
+        });
+        // Remove anyone no longer batching
         taskCache.forEach(function(val, key) {
-          if (!activeRefs.has(key)) taskCache.delete(key);
+          if(!activeRefs.has(key)) taskCache.delete(key);
         });
         ingestData(freshData);
       }
     } catch(e){}
-    for(var entry of taskCache.entries()){
-      var data=entry[1]; if(!data.jobId) continue;
-      try{var r2=await _origFetch(COMO_BASE+'/store/'+STORE_ID+'/task/'+encodeURIComponent(data.jobId),{credentials:'include',headers:{Accept:'application/json'}});if(r2.ok)ingestData(await r2.json());}catch(e){}
-    }
     renderLive();
   }
 
